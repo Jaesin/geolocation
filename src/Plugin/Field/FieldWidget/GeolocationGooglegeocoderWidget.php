@@ -57,20 +57,6 @@ class GeolocationGooglegeocoderWidget extends WidgetBase {
       '#attributes' => array('class' => array('geolocation-hidden-lng')),
     );
 
-    // Attach css
-    $element['#attached']['css'][] = drupal_get_path('module', 'geolocation') . '/css/geolocation-googlegeocoder-widget.css';
-
-    // Attach js
-    $element['#attached']['js'][] = array(
-      'data' => '//maps.googleapis.com/maps/api/js?libraries=places',
-      'type' => 'external',
-    );
-    $element['#attached']['js'][] = array(
-      'data' => drupal_get_path('module', 'geolocation') . '/js/geolocation-googlegeocoder-widget.js',
-      'type' => 'file',
-      'scope' => 'footer',
-    );
-
     // Make default values available as javascript settings. Example: To access
     // the default lat value via javascript use: drupalSettings.mapDefaults.lat
     $data = array(
@@ -81,9 +67,16 @@ class GeolocationGooglegeocoderWidget extends WidgetBase {
         ),
       ),
     );
-    $element['map']['#attached']['js'][] = array(
-      'data' => array('geolocation' => $data),
-      'type' => 'setting',
+
+    // Attach widget library and js settings
+    $element['#attached'] = array(
+      'library' => array(
+        'geolocation/geolocation.widgets.googlegeocoder',
+      ),
+      'drupalSettings' => array(
+        'data' => array('geolocation' => $data),
+        'type' => 'setting',
+      ),
     );
 
     // Wrap the whole form in a container.

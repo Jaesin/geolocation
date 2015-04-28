@@ -1,8 +1,0 @@
-geolocation.maps:
-  version: 8.x-1.x
-  js:
-    https://maps.googleapis.com/maps/api/js: {type: external}
-    js/geolocation-googlemap-formatter.js: {}
-  required:
-    - core/jquery
-    - core/drupalSettings
