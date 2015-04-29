@@ -89,25 +89,32 @@ class GeolocationGoogleMapFormatter extends FormatterBase {
    */
   public function viewElements(FieldItemListInterface $items) {
     // Add formatter settings to the drupalSettings array.
-    $drupal_settings = &$element['#attached']['drupalSettings']['geolocation'];
-    $drupal_settings['fieldSettings'] = $this->getSettings();
-    foreach ($items as $delta => $item) {
-      $element[$delta] = array(
+    $field_settings = $this->getSettings();
+    $elements =  [];
+    foreach ($items as $item) {
+      $uniqueue_id = uniqid("map-canvas-");
+
+      $elements[] = [
         '#type' => 'markup',
-        '#markup' => '<div id="map-canvas-' . $delta . '"></div>',
-        '#attached' => array(
-          'library' => array(
-            'geolocation/google.maps',
-            'geolocation/geolocation.maps',
-          ),
-        ),
-      );
-      $drupal_settings['googleMaps'][$delta] = array(
-        'lat' => $item->lat,
-        'lng' => $item->lng,
-      );
+        '#markup' => '<div id="' . $uniqueue_id . '" class="geolocation-google-map"></div>',
+        '#attached' => [
+          'library' => ['geolocation/geolocation.maps'],
+          'drupalSettings' => [
+            'geolocation' => [
+              'maps' => [
+                $uniqueue_id => [
+                  'id' => "{$uniqueue_id}",
+                  'lat' => (float)$item->lat,
+                  'lng' => (float)$item->lng,
+                  'settings' => $field_settings,
+                ],
+              ],
+            ],
+          ],
+        ],
+      ];
     }
-    return $element;
+    return $elements;
   }
 
   /**

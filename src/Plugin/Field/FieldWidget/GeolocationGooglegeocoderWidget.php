@@ -30,8 +30,8 @@ class GeolocationGooglegeocoderWidget extends WidgetBase {
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
 
     // Create a unique canvas id for each map of each geolocation field instance.
-    $field_name = $this->fieldDefinition->getName();
-    $canvas_id = 'map_canvas_' . $field_name . '_' . $delta;
+    $field_id = preg_replace('/[^a-zA-Z0-9\-]/', '-', $this->fieldDefinition->getName());
+    $canvas_id = uniqid("map-canvas-{$field_id}-");
 
     $lat = $items[$delta]->lat;
     $lng = $items[$delta]->lng;
@@ -40,48 +40,43 @@ class GeolocationGooglegeocoderWidget extends WidgetBase {
     $lat_default_value = isset($lat) ? $lat : NULL;
     $lng_default_value = isset($lng) ? $lng : NULL;
 
-    // The map container.
-    $element['map_canvas'] = array(
-      '#markup' => '<div id="' . $canvas_id . '" class="geolocation-map-canvas"></div>',
-    );
-
     // Hidden lat,lng input fields.
     $element['lat'] = array(
       '#type' => 'hidden',
       '#default_value' => $lat_default_value,
-      '#attributes' => array('class' => array('geolocation-hidden-lat')),
+      '#attributes' => array('class' => array('geolocation-hidden-lat', "for-{$canvas_id}")),
     );
     $element['lng'] = array(
       '#type' => 'hidden',
       '#default_value' => $lng_default_value,
-      '#attributes' => array('class' => array('geolocation-hidden-lng')),
+      '#attributes' => array('class' => array('geolocation-hidden-lng', "for-{$canvas_id}")),
     );
 
-    // Make default values available as javascript settings. Example: To access
-    // the default lat value via javascript use: drupalSettings.mapDefaults.lat
-    $data = array(
-      'defaults' => array(
-        "$canvas_id" => array(
-          'lat' => $lat_default_value,
-          'lng' => $lng_default_value,
+    // The map container.
+    $element['map_canvas'] = array(
+      '#markup' => '<div id="' . $canvas_id . '" class="geolocation-map-canvas"></div>',
+      '#attached' => [
+        'library' => array(
+          'geolocation/geolocation.widgets.googlegeocoder',
         ),
-      ),
-    );
-
-    // Attach widget library and js settings
-    $element['#attached'] = array(
-      'library' => array(
-        'geolocation/geolocation.widgets.googlegeocoder',
-      ),
-      'drupalSettings' => array(
-        'data' => array('geolocation' => $data),
-        'type' => 'setting',
-      ),
+        'drupalSettings' => array(
+          'geolocation' => [
+            'widget_maps' => [
+              $canvas_id => [
+                'id' => $canvas_id,
+                'lat' => (float)$lat_default_value,
+                'lng' => (float)$lng_default_value,
+                'settings' => [],
+              ],
+            ],
+          ],
+        ),
+      ],
     );
 
     // Wrap the whole form in a container.
     $element += array(
-      '#type' => 'item',
+      '#type' => 'container',
       '#title' => $element['#title'],
     );
 

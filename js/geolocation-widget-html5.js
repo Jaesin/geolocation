@@ -1,6 +1,6 @@
 /**
  * @file
- * Javascript for the Geolocation HTML5 widget.
+ *   Javascript for the Geolocation HTML5 widget.
  */
 
 (function ($, Drupal, navigator) {
@@ -9,7 +9,6 @@
 
   Drupal.behaviors.geolocationHTML5 = {
     attach: function(context, settings) {
-
       $('.geolocation-html5-button:not(.disabled)').each( function(index) {
         // The parent element.
         var $thisButton = $(this);
@@ -133,5 +132,26 @@
       alert(Drupal.t('No location data found. Your browser does not support the W3C Geolocation API.'));
     }
   });
+
+  /**
+   * Runs after the google maps api is available
+   *
+   * @param settings
+   */
+  function initialize(settings) {
+
+    // Process drupalSettings for every Google map present on the current page.
+    $.each(settings.geolocation.widget_maps, function(widget_id, map) {
+
+      // Add any missing settings.
+      map.settings = $.extend(geolocation.default_settings(), map.settings);
+
+      // Add the map by ID with settings.
+      geolocation.add_map(map);
+
+      // Add the click responders ffor setting the value.
+      geolocation.add_click_listener(map);
+    });
+  }
 
 })(jQuery, Drupal, navigator);
