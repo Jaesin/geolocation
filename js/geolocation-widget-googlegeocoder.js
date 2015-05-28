@@ -18,7 +18,7 @@
         // First load the library from google.
         geolocation.load_google(function(){
           // This won't fire until window load.
-          initialize(settings);
+          initialize(settings.geolocation.widget_maps);
         });
       }
     }
@@ -29,74 +29,54 @@
    * @param map
    */
   geolocation.add_click_listener = function(map) {
+    // Used for a single click timeout.
+    var singleClick;
+    // Add the click listener.
     google.maps.event.addListener(map.google_map, 'click', function(e) {
       // Create 500ms timeout to wait for double click.
-      var singleClick = setTimeout(function() {
+      singleClick = setTimeout(function() {
         geolocation.codeLatLng(e.latLng, map, 'marker');
         geolocation.setMapMarker(e.latLng, map);
       }, 500);
     });
+    // Add a doubleclick listener.
     google.maps.event.addListener(map.google_map, 'dblclick', function(e) {
       clearTimeout(singleClick);
     });
   };
 
   /**
-  * Set the latitude and longitude values to the input fields
-  * And optionally update the address field
-  *
-  * @param latLng
-  *   a location (latLng) object from google maps api
-  * @param map
-  *   The settings object that contains all of the necessary metadata for this map.
-  * @param op
-  *   the op that was performed
-  */
-  geolocation.codeLatLng = function(latLng, map, op) {
-    // Update the lat and lng input fields
-    $('.geolocation-hidden-lat.for-'+map.id).attr('value', latLng.lat());
-    $('.geolocation-hidden-lng.for-'+map.id).attr('value', latLng.lng());
-  };
-
-  /**
-  * Set/Update a marker on a map
-  *
-  * @param latLng
-  *   a location (latLng) object from google maps api
-   * @param map
-   *   The settings object that contains all of the necessary metadata for this map.
-  */
-  geolocation.setMapMarker = function(latLng, map) {
-    // make sure the marker exists.
-    if (typeof map.marker !== 'undefined') {
-      map.marker.setPosition(latLng);
-    } else {
-      // Add the marker to the map.
-      map.marker = new google.maps.Marker({
-        position: latLng,
-        map: map.google_map
-      });
-    }
-  };
-
-  /**
    * Runs after the google maps api is available
    *
-   * @param settings
+   * @param maps
    */
-  function initialize(settings) {
-
+  function initialize(maps) {
     // Process drupalSettings for every Google map present on the current page.
-    $.each(settings.geolocation.widget_maps, function(widget_id, map) {
+    $.each(maps, function(widget_id, map) {
 
-      // Add any missing settings.
-      map.settings = $.extend(geolocation.default_settings(), map.settings);
+      // Get the container object.
+      map.container = document.getElementById(map.id);
 
-      // Add the map by ID with settings.
-      geolocation.add_map(map);
+      if ($(map.container).length >= 1
+        && !$(map.container).hasClass('geolocation-processed')
+        && typeof google !== 'undefined'
+        && typeof google.maps !== 'undefined'
+      ) {
+        // Add any missing settings.
+        map.settings = $.extend(geolocation.default_settings(), map.settings);
 
-      // Add the click responders ffor setting the value.
-      geolocation.add_click_listener(map);
+        // Add the map by ID with settings.
+        geolocation.add_map(map);
+
+        // Add the geocoder to the map.
+        geolocation.add_geocoder(map);
+
+        // Add the click responders ffor setting the value.
+        geolocation.add_click_listener(map);
+
+        // Set the already processed flag.
+        $(map.container).addClass('geolocation-processed');
+      }
     });
   }
 
