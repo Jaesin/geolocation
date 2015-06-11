@@ -170,7 +170,7 @@
       // Stop all that bubbling and form submitting.
       e.preventDefault();
       // Remove the coordinates.
-      $(map.controls).children('.geolocation-map-indicator').removeClass('has-location');
+      $(map.controls).children('.geolocation-map-indicator').text('').removeClass('has-location');
       // Clear the map point.
       map.marker.setMap();
       // Clear the input text.
