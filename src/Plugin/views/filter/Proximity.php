@@ -11,7 +11,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\geolocation\GeolocationCore;
 use Drupal\views\Plugin\views\display\DisplayPluginBase;
-use Drupal\views\Plugin\views\filter\Numeric;
+use Drupal\views\Plugin\views\filter\NumericFilter;
 use Drupal\views\Plugin\views\query\Sql;
 use Drupal\views\ViewExecutable;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -23,7 +23,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @ViewsFilter("geolocation_filter_proximity")
  */
-class Proximity extends Numeric implements ContainerFactoryPluginInterface {
+class Proximity extends NumericFilter implements ContainerFactoryPluginInterface {
 
 
   /**

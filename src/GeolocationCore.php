@@ -74,7 +74,7 @@ class GeolocationCore {
       $data[$table_name][$args['@field_name'] . '_proximity'] = [
         'group' => 'Content',
         'title' => t('Proximity (@field_name)', $args),
-        'title short' => $table_data[$args['@field_name']]['help'] . t(":proximity"),
+        'title short' => $table_data[$args['@field_name']]['title short'] . t(":proximity"),
         'help' => $table_data[$args['@field_name']]['help'],
         'argument' => [
           'id' => 'geolocation_argument_proximity',
