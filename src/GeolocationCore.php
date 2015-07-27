@@ -41,10 +41,13 @@ class GeolocationCore {
   }
 
   public function getViewsFieldData(FieldStorageConfigInterface $field_storage) {
+
     // Make sure views.views.inc is loaded.
     module_load_include('inc', 'views', 'views.views');
+
     // Get the default data from the views module.
     $data = views_field_default_views_data($field_storage);
+
     // Loop through all of the results and set our overrides.
     foreach ($data as $table_name => $table_data) {
       foreach ($table_data as $field_name => $field_data) {
@@ -140,19 +143,31 @@ class GeolocationCore {
    * @return string
    */
   public function getQueryFragment($table_name, $field_id, $filter_lat, $filter_lng) {
+
     // Define the field names.
     $field_latsin = "{$table_name}.{$field_id}_lat_sin";
     $field_latcos = "{$table_name}.{$field_id}_lat_cos";
-    $field_lng= "{$table_name}.{$field_id}_lng_rad";
+    $field_lng    = "{$table_name}.{$field_id}_lng_rad";
 
     // Pre-calculate filter values.
     $filter_latcos = cos(deg2rad($filter_lat));
     $filter_latsin = sin(deg2rad($filter_lat));
-    $filter_lng = deg2rad($filter_lng);
+    $filter_lng    = deg2rad($filter_lng);
 
     // Keep it simple. We don't need high accuracy here.
     $earth_radius = 6371;
 
-    return "(ACOS($filter_latcos * $field_latcos * COS($filter_lng - $field_lng) + $filter_latsin * $field_latsin) * $earth_radius)";
+    return "(
+      ACOS(
+        $filter_latcos
+        * $field_latcos
+        * COS( $filter_lng - $field_lng  )
+        +
+        $filter_latsin
+        * $field_latsin
+      ) * $earth_radius
+    )";
+
   }
+
 }
