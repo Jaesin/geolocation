@@ -25,7 +25,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class Proximity extends NumericFilter implements ContainerFactoryPluginInterface {
 
-
   /**
    * The field alias.
    *
@@ -98,18 +97,16 @@ class Proximity extends NumericFilter implements ContainerFactoryPluginInterface
    * {@inheritdoc}
    */
   protected function valueForm(&$form, FormStateInterface $form_state) {
-    if (!$form_state->get('exposed')) {
-      $form['value']['lat'] = [
-        '#type' => 'textfield',
-        '#title' => $this->t('Latitude'),
-        '#default_value' => !empty($this->value['lat']) ? $this->value['lat'] : '',
-      ];
-      $form['value']['lng'] = [
-        '#type' => 'textfield',
-        '#title' => $this->t('Longitude'),
-        '#default_value' => !empty($this->value['lng']) ? $this->value['lng'] : '',
-      ];
-    }
+    $form['value']['lat'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Latitude'),
+      '#default_value' => !empty($this->value['lat']) ? $this->value['lat'] : '',
+    ];
+    $form['value']['lng'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Longitude'),
+      '#default_value' => !empty($this->value['lng']) ? $this->value['lng'] : '',
+    ];
     parent::valueForm($form, $form_state);
   }
 
@@ -130,43 +127,49 @@ class Proximity extends NumericFilter implements ContainerFactoryPluginInterface
     $query->addField(NULL, $expression, $this->field_alias);
 
     $info = $this->operators();
+    $placeholder = $this->placeholder();
     if (!empty($info[$this->operator]['method'])) {
-      $this->{$info[$this->operator]['method']}($this->field_alias);
+      $this->{$info[$this->operator]['method']}($placeholder, $expression);
     }
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function opBetween($field) {
-    $placeholder = $this->placeholder();
-
+  protected function opBetween($placeholder, $expression) {
     if ($this->operator == 'between') {
-      $this->query->addHavingExpression($this->options['group'], "{$field} BETWEEN {$placeholder}_min AND {$placeholder}_max", [
-        $placeholder.'_min' => $this->value['min'],
-        $placeholder.'_max' => $this->value['max'],
-      ]);
+      $this->query->addWhereExpression($this->options['group'], "{$expression} BETWEEN {$placeholder}_min AND {$placeholder}_max",
+        [
+          $placeholder . '_min' => $this->value['min'],
+          $placeholder . '_max' => $this->value['max']
+        ]
+      );
     }
     else {
-      $this->query->addHavingExpression($this->options['group'], "{$field} <= {$placeholder}_min OR {$field} >= {$placeholder}_max", [
-        $placeholder.'_min' => $this->value['min'],
-        $placeholder.'_max' => $this->value['max'],
-      ]);
+      $this->query->addWhereExpression($this->options['group'], "{$expression} <= {$placeholder}_min OR {$field} >= {$placeholder}_max",
+        [
+          $placeholder . '_min' => $this->value['min'],
+          $placeholder . '_max' => $this->value['max']
+        ]
+      );
     }
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function opSimple($field) {
-    $placeholder = $this->placeholder();
-    $this->query->addHavingExpression($this->options['group'], "{$field} {$this->operator} {$placeholder}", [$placeholder => $this->value['value']]);
+  protected function opSimple($placeholder, $expression) {
+    $this->query->addWhereExpression($this->options['group'], "{$expression} {$this->operator} {$placeholder}",
+      [
+        $placeholder => $this->value['value']
+      ]
+    );
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function opEmpty($field) {
+  protected function opEmpty($placeholder, $expression) {
     if ($this->operator == 'empty') {
       $operator = "IS NULL";
     }
@@ -174,15 +177,18 @@ class Proximity extends NumericFilter implements ContainerFactoryPluginInterface
       $operator = "IS NOT NULL";
     }
 
-    $this->query->addHavingExpression($this->options['group'], "{$field} {$operator}");
+    $this->query->addWhereExpression($this->options['group'], "{$expression} {$operator}");
   }
 
   /**
    * @inheritdoc
    */
-  protected function opRegex($field) {
-    $placeholder = $this->placeholder();
-    $this->query->addHavingExpression($this->options['group'], "{$field} 'REGEXP' {$placeholder}", [$placeholder => $this->value['value']]);
+  protected function opRegex($placeholder, $expression) {
+    $this->query->addWhereExpression($this->options['group'], "{$expression} 'REGEXP' {$placeholder}",
+      [
+        $placeholder => $this->value['value']
+      ]
+    );
   }
 
 }
