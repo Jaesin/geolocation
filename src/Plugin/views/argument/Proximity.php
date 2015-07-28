@@ -7,12 +7,10 @@
 
 namespace Drupal\geolocation\Plugin\views\argument;
 
-use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\views\Plugin\CacheablePluginInterface;
 use Drupal\geolocation\GeolocationCore;
-use Drupal\views\Plugin\views\argument\Formula;
-use Drupal\views\Plugin\views\query\Sql;
-use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\views\Plugin\views\argument\ArgumentPluginBase;
 
 /**
  * Argument handler for geolocation proximity.
@@ -21,74 +19,114 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @ViewsArgument("geolocation_argument_proximity")
  */
-class Proximity extends Formula implements ContainerFactoryPluginInterface {
-
-  var $formula = '';
+class Proximity extends ArgumentPluginBase implements CacheablePluginInterface {
 
   /**
-   * The route match.
-   *
-   * @var \Drupal\Core\Routing\RouteMatchInterface
+   * {@inheritdoc}
    */
-  protected $routeMatch;
+  protected function defineOptions() {
+    $options = parent::defineOptions();
+    $options['lat'] = [
+      'default' => ''
+    ];
+    $options['lng'] = [
+      'default' => ''
+    ];
+    $options['current_location'] = [
+      'default' => FALSE
+    ];
+    $options['distance'] = [
+      'default' => 10
+    ];
+    return $options;
+  }
+
+  public function buildOptionsForm(&$form, FormStateInterface $form_state) {
+    $form['current_location'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t("Use user's current location"),
+      '#default_value' => $this->options['current_location'],
+    ];
+    $form['location'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('Default location'),
+      '#states' => [
+        'visible' => [
+          ':input[name="options[current_location]"]' => [
+            'checked' => FALSE
+          ],
+        ]
+      ]
+    ];
+    $form['location']['lat'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Latitude'),
+      '#default_value' => $this->options['lat'],
+    ];
+    $form['location']['lng'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Longitude'),
+      '#default_value' => $this->options['lng'],
+    ];
+    $form['distance'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Distance'),
+      '#default_value' => $this->options['distance'],
+    ];
+  }
 
   /**
-   * Constructs a new Date instance.
-   *
-   * @param array $configuration
-   *   A configuration array containing information about the plugin instance.
-   * @param string $plugin_id
-   *   The plugin_id for the plugin instance.
-   * @param mixed $plugin_definition
-   *   The plugin implementation definition.
-   *
-   * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
-   *   The route match.
+   * Return the default argument.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, RouteMatchInterface $route_match) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition);
-
-    $this->routeMatch = $route_match;
+  public function getArgument() {
+    return [
+      $this->options['current_location'],
+      $this->options['lat'],
+      $this->options['lng']
+    ];
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static(
-      $configuration,
-      $plugin_id,
-      $plugin_definition,
-      $container->get('current_route_match')
-    );
+  public function isCacheable() {
+    return FALSE;
   }
-//
-//  /**
-//   * Build the query based upon the formula
-//   */
-//  public function query($group_by = FALSE) {
-//    $this->ensureMyTable();
-//    // Now that our table is secure, get our formula.
-//    $placeholder = $this->placeholder();
-//
-//    $placeholders = array(
-//      $placeholder => $this->argument,
-//    );
-//    /** @var Sql $query */
-//    $query = $this->query;
-//    $query->addWhereExpression(0, $this->getFormula(), $placeholders);
-//  }
-//
-//  /**
-//   * @inheritdoc
-//   */
-//  public function getFormula() {
-//    /** @var GeolocationCore $geo_core */
-//    $geo_core = \Drupal::service('geolocation.core');
-////    $this->query->addWhereExpression($geo_core->generateQueryFragment($this->argument));
-//
-////    $this->query->addWhere(0, "$this->tableAlias.$this->realField", $this->argument);
-//    $formula = $geo_core->generateQueryFragment()str_replace('***table***', $this->tableAlias, $this->formula);
-//    return $formula;
-//  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCacheContexts() {
+    return [];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function query($group_by = FALSE) {
+
+    $this->ensureMyTable();
+    $query = $this->query;
+    $table_name = $this->ensureMyTable();
+
+    $field_id = str_replace('_proximity', '', $this->realField);
+
+    if (!$this->options['current_location']) {
+      $lat = $this->options['lat'];
+      $lgn = $this->options['lng'];
+    }
+
+    $expression = GeolocationCore::getQueryFragment($table_name, $field_id, $lat, $lgn);
+
+    // We use having to be able to reuse the query on field handlers
+    $query->addField(NULL, $expression, $this->field_alias);
+
+    $this->query->addHavingExpression($this->options['group'], "$this->tableAlias.$this->realField <= {$placeholder}_distance",
+      [
+        $placeholder . '_distance' => $this->argument
+      ]
+    );
+
+  }
+
 }
