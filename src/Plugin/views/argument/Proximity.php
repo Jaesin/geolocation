@@ -44,6 +44,7 @@ class Proximity extends ArgumentPluginBase implements CacheablePluginInterface {
     $form['location'] = [
       '#type'  => 'fieldset',
       '#title' => $this->t('Geolocation Proximity'),
+      '#description' => $this->t('Please use the following argument format when passing it to a Views: [lat],[lgn],<=,[distance]'),
     ];
     $form['location']['lat'] = [
       '#type' => 'textfield',
@@ -59,12 +60,12 @@ class Proximity extends ArgumentPluginBase implements CacheablePluginInterface {
       '#type' => 'select',
       '#title' => $this->t('Operator'),
       '#options' => [
-        '<',
-        '<=',
-        '>',
-        '>=',
-        '=',
-        '!=',
+        '<'  => '<',
+        '<=' => '<=',
+        '>'  => '>',
+        '>=' => '>=',
+        '='  => '=',
+        '!=' => '!=',
       ],
       '#default_value' => $this->options['location']['operator'],
     ];
@@ -91,13 +92,21 @@ class Proximity extends ArgumentPluginBase implements CacheablePluginInterface {
     $operator = $this->options['location']['operator'];
     $distance = $this->options['location']['distance'];
 
+    $components = explode(",", $this->argument);
+
+    if (!empty($this->argument) && count($components) == 4) {
+      // Arguments should be separated by comma.
+      // e.g. /locations/show/37.7752393,-122.4593581,<=,5
+      list($lat, $lgn, $operator, $distance) = $components;
+    }
+
     $expression = GeolocationCore::getQueryFragment($table_name, $field_id, $lat, $lgn);
     $placeholder = $this->placeholder();
 
     // We use having to be able to reuse the query on field handlers
     $query->addField(NULL, $expression, $this->field_alias);
 
-    $this->query->addWhereExpression(NULL, "$expression {$operator} {$placeholder}_distance",
+    $query->addWhereExpression(NULL, "$expression {$operator} {$placeholder}_distance",
       [
         $placeholder . '_distance' => $distance
       ]

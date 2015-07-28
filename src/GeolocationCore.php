@@ -142,7 +142,7 @@ class GeolocationCore {
    * @param $filter_lng
    * @return string
    */
-  public function getQueryFragment($table_name, $field_id, $filter_lat, $filter_lng) {
+  public static function getQueryFragment($table_name, $field_id, $filter_lat, $filter_lng) {
 
     // Define the field names.
     $field_latsin = "{$table_name}.{$field_id}_lat_sin";
