@@ -42,6 +42,9 @@ class Proximity extends ArgumentPluginBase implements CacheablePluginInterface {
   }
 
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
+    // @todo Find out how to store data in sessions
+    // @todo Add menu path for AJAX callback and store user location in session variables.
+    // @todo Use session variables in $this->query
     $form['current_location'] = [
       '#type' => 'checkbox',
       '#title' => $this->t("Use user's current location"),
@@ -84,20 +87,6 @@ class Proximity extends ArgumentPluginBase implements CacheablePluginInterface {
       $this->options['lat'],
       $this->options['lng']
     ];
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function isCacheable() {
-    return FALSE;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getCacheContexts() {
-    return [];
   }
 
   /**
