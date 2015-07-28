@@ -26,66 +26,52 @@ class Proximity extends ArgumentPluginBase implements CacheablePluginInterface {
    */
   protected function defineOptions() {
     $options = parent::defineOptions();
-    $options['lat'] = [
-      'default' => ''
-    ];
-    $options['lng'] = [
-      'default' => ''
-    ];
-    $options['current_location'] = [
-      'default' => FALSE
-    ];
-    $options['distance'] = [
-      'default' => 10
+    $options['location']['contains'] = 
+    [
+      'lat'      => ['default' => 37.7752393],
+      'lng'      => ['default' => -122.4593581],
+      'operator' => ['default' => '<='],
+      'distance' => ['default' => 5],
     ];
     return $options;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
-    // @todo Find out how to store data in sessions
-    // @todo Add menu path for AJAX callback and store user location in session variables.
-    // @todo Use session variables in $this->query
-    $form['current_location'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t("Use user's current location"),
-      '#default_value' => $this->options['current_location'],
-    ];
+    parent::buildOptionsForm($form, $form_state);
     $form['location'] = [
-      '#type' => 'fieldset',
-      '#title' => $this->t('Default location'),
-      '#states' => [
-        'visible' => [
-          ':input[name="options[current_location]"]' => [
-            'checked' => FALSE
-          ],
-        ]
-      ]
+      '#type'  => 'fieldset',
+      '#title' => $this->t('Geolocation Proximity'),
     ];
     $form['location']['lat'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Latitude'),
-      '#default_value' => $this->options['lat'],
+      '#default_value' => $this->options['location']['lat'],
     ];
     $form['location']['lng'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Longitude'),
-      '#default_value' => $this->options['lng'],
+      '#default_value' => $this->options['location']['lng'],
     ];
-    $form['distance'] = [
+    $form['location']['operator'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Operator'),
+      '#options' => [
+        '<',
+        '<=',
+        '>',
+        '>=',
+        '=',
+        '!=',
+      ],
+      '#default_value' => $this->options['location']['operator'],
+    ];
+    $form['location']['distance'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Distance'),
-      '#default_value' => $this->options['distance'],
-    ];
-  }
-
-  /**
-   * Return the default argument.
-   */
-  public function getArgument() {
-    return [
-      $this->options['current_location'],
-      $this->options['lat'],
-      $this->options['lng']
+      '#default_value' => $this->options['location']['distance'],
     ];
   }
 
@@ -94,25 +80,26 @@ class Proximity extends ArgumentPluginBase implements CacheablePluginInterface {
    */
   public function query($group_by = FALSE) {
 
-    $this->ensureMyTable();
     $query = $this->query;
     $table_name = $this->ensureMyTable();
 
     $field_id = str_replace('_proximity', '', $this->realField);
 
-    if (!$this->options['current_location']) {
-      $lat = $this->options['lat'];
-      $lgn = $this->options['lng'];
-    }
+    // Default to San Francisco
+    $lat = $this->options['location']['lat'];
+    $lgn = $this->options['location']['lng'];
+    $operator = $this->options['location']['operator'];
+    $distance = $this->options['location']['distance'];
 
     $expression = GeolocationCore::getQueryFragment($table_name, $field_id, $lat, $lgn);
+    $placeholder = $this->placeholder();
 
     // We use having to be able to reuse the query on field handlers
     $query->addField(NULL, $expression, $this->field_alias);
 
-    $this->query->addHavingExpression($this->options['group'], "$this->tableAlias.$this->realField <= {$placeholder}_distance",
+    $this->query->addWhereExpression(NULL, "$expression {$operator} {$placeholder}_distance",
       [
-        $placeholder . '_distance' => $this->argument
+        $placeholder . '_distance' => $distance
       ]
     );
 
