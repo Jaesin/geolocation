@@ -24,12 +24,17 @@ class GeolocationPageController extends ControllerBase {
       throw new AccessDeniedHttpException();
     }
 
+    // Save current users coordinates in cookies.
     GeolocationCore::setCookie('lat', $lat);
     GeolocationCore::setCookie('lng', $lng);
 
-    return [
+    // @todo Change this page path to be a callback.
+    $element['content'] = [
       '#markup' => '',
     ];
+
+    return $element;
+
   }
 
 }
