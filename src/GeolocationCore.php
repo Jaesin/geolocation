@@ -170,4 +170,12 @@ class GeolocationCore {
 
   }
 
+  public static function setCookie($name, $value) {
+    setcookie($name, $value, time() + (86400 * 30), "/");
+  }
+
+  public static function getCookie($name) {
+    return $_COOKIE[$name];
+  }
+
 }

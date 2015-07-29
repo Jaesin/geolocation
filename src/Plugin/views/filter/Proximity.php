@@ -89,6 +89,7 @@ class Proximity extends NumericFilter implements ContainerFactoryPluginInterface
     // value is already set up properly, we're just adding our new field to it.
     $options['value']['contains']['lat']['default'] = '';
     $options['value']['contains']['lng']['default'] = '';
+    $options['value']['contains']['current_location']['default'] = FALSE;
 
     return $options;
   }
@@ -97,29 +98,63 @@ class Proximity extends NumericFilter implements ContainerFactoryPluginInterface
    * {@inheritdoc}
    */
   protected function valueForm(&$form, FormStateInterface $form_state) {
-    $form['value']['lat'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Latitude'),
-      '#default_value' => !empty($this->value['lat']) ? $this->value['lat'] : '',
-    ];
-    $form['value']['lng'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Longitude'),
-      '#default_value' => !empty($this->value['lng']) ? $this->value['lng'] : '',
-    ];
     parent::valueForm($form, $form_state);
+    $exposed = $form_state->get('exposed');
+    if ($exposed) {
+      $form['value']['lat'] = [
+        '#type' => 'textfield',
+        '#title' => $this->t('Latitude'),
+        '#default_value' => $this->value['lat'],
+      ];
+      $form['value']['lng'] = [
+        '#type' => 'textfield',
+        '#title' => $this->t('Longitude'),
+        '#default_value' => $this->value['lng'],
+      ];
+    }
+    else {
+      $form['value']['current_location'] = [
+        '#type' => 'checkbox',
+        '#title' => $this->t("Use user's current location"),
+        '#default_value' => $this->value['current_location'],
+      ];
+    }
+    if ($this->value['current_location']) {
+      $local_js = array(
+        '#attached' => array(
+          'js' => array(
+            drupal_get_path('module', 'geolocation') . '/js/geolocation-detect-location.js' => [],
+          ),
+        ),
+      );
+      $form['value']['detect_location'] = [
+        '#markup' => 'test' . drupal_render($local_js),
+      ];
+    }
+
   }
 
   /**
    * {@inheritdoc}
    */
   public function query() {
+
     /** @var Sql $query */
     $query = $this->query;
     $table_name = $this->ensureMyTable();
     $field_id = str_replace('_proximity', '', $this->realField);
-    $lat = $this->value['lat'];
-    $lgn = $this->value['lng'];
+
+    $cookie_lat = GeolocationCore::getCookie('lat');
+    $cookie_lng = GeolocationCore::getCookie('lng');
+
+    if (is_numeric($cookie_lat) && is_numeric($cookie_lng) && $this->value['current_location']) {
+      $lat = $cookie_lat;
+      $lgn = $cookie_lng;
+    }
+    else {
+      $lat = $this->value['lat'];
+      $lgn = $this->value['lng'];
+    }
 
     $expression = $this->geolocation_core->getQueryFragment($table_name, $field_id, $lat, $lgn);
 
@@ -127,16 +162,16 @@ class Proximity extends NumericFilter implements ContainerFactoryPluginInterface
     $query->addField(NULL, $expression, $this->field_alias);
 
     $info = $this->operators();
-    $placeholder = $this->placeholder();
     if (!empty($info[$this->operator]['method'])) {
-      $this->{$info[$this->operator]['method']}($placeholder, $expression);
+      $this->{$info[$this->operator]['method']}($expression);
     }
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function opBetween($placeholder, $expression) {
+  protected function opBetween($expression) {
+    $placeholder = $this->placeholder();
     if ($this->operator == 'between') {
       $this->query->addWhereExpression($this->options['group'], "{$expression} BETWEEN {$placeholder}_min AND {$placeholder}_max",
         [
@@ -158,7 +193,8 @@ class Proximity extends NumericFilter implements ContainerFactoryPluginInterface
   /**
    * {@inheritdoc}
    */
-  protected function opSimple($placeholder, $expression) {
+  protected function opSimple($expression) {
+    $placeholder = $this->placeholder();
     $this->query->addWhereExpression($this->options['group'], "{$expression} {$this->operator} {$placeholder}",
       [
         $placeholder => $this->value['value']
@@ -169,7 +205,8 @@ class Proximity extends NumericFilter implements ContainerFactoryPluginInterface
   /**
    * {@inheritdoc}
    */
-  protected function opEmpty($placeholder, $expression) {
+  protected function opEmpty($expression) {
+    $placeholder = $this->placeholder();
     if ($this->operator == 'empty') {
       $operator = "IS NULL";
     }
@@ -183,7 +220,8 @@ class Proximity extends NumericFilter implements ContainerFactoryPluginInterface
   /**
    * @inheritdoc
    */
-  protected function opRegex($placeholder, $expression) {
+  protected function opRegex($expression) {
+    $placeholder = $this->placeholder();
     $this->query->addWhereExpression($this->options['group'], "{$expression} 'REGEXP' {$placeholder}",
       [
         $placeholder => $this->value['value']

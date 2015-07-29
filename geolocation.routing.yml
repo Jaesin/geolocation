@@ -1,0 +1,7 @@
+geolocation_location_detect:
+  path: 'geolocation/detect-user-location/{lat}/{lng}'
+  defaults:
+    _controller: '\Drupal\geolocation\Controller\GeolocationPageController::rememberUserLocation'
+    _title: 'Detect user location'
+  requirements:
+    _access: 'TRUE'
