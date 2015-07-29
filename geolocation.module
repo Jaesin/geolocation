@@ -43,3 +43,7 @@ function geolocation_theme() {
     ]
   ];
 }
+
+function geolocation_preprocess_page(&$vars) {
+  $vars['#attached']['library'][] = 'geolocation/geolocation.location-detect';
+}

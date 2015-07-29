@@ -19,57 +19,17 @@
             var lat = position.coords.latitude;
             var lng = position.coords.longitude;
             var accuracy = position.coords.accuracy / 1000;
-
-alert(10);
-            // Set the values of hidden form inputs.
-            $thisButton.siblings(".geolocation-hidden-lat").val(lat);
-            $thisButton.siblings(".geolocation-hidden-lng").val(lng);
-
-            // Hide the default text.
-            $('.default', $thisButton).hide();
-
-            // Display a success message.
-            var locationString = Drupal.t('Browser location: @lat,@lng Accuracy: @accuracy m', {'@lat': lat, '@lng': lng, '@accuracy': accuracy});
-            $('.location', $thisButton).html(locationString);
-
-            // Disable the button.
-            $thisButton.addClass('disabled');
-
-            // Show the clear icon.
-            $('.clear', $thisButton).show();
+            $.get( "/geolocation/detect-user-location/" + lat + "/" + lng);
           },
 
-          // Error handler for getCurrentPosition()
-          function(error) {
-
-            // Alert with error message.
-            switch(error.code) {
-              case error.PERMISSION_DENIED:
-                alert(Drupal.t('No location data found. Reason: PERMISSION_DENIED.'));
-                break;
-              case error.POSITION_UNAVAILABLE:
-                alert(Drupal.t('No location data found. Reason: POSITION_UNAVAILABLE.'));
-                break;
-              case error.TIMEOUT:
-                alert(Drupal.t('No location data found. Reason: TIMEOUT.'));
-                break;
-              default:
-                alert(Drupal.t('No location data found. Reason: Unknown error.'));
-                break;
-            }
-          },
-
-          // Options for getCurrentPosition()
+          function(error) {},
           {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 6000
+            //enableHighAccuracy: true,
+            //timeout: 5000,
+            //maximumAge: 6000
           }
         );
 
-      }
-      else {
-        alert(Drupal.t('No location data found. Your browser does not support the W3C Geolocation API.'));
       }
 
     }

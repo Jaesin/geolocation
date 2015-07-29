@@ -144,8 +144,8 @@ class Proximity extends NumericFilter implements ContainerFactoryPluginInterface
     $table_name = $this->ensureMyTable();
     $field_id = str_replace('_proximity', '', $this->realField);
 
-    $cookie_lat = GeolocationCore::getCookie('lat');
-    $cookie_lng = GeolocationCore::getCookie('lng');
+    $cookie_lat = $this->geolocation_core->getCookie('lat');
+    $cookie_lng = $this->geolocation_core->getCookie('lng');
 
     if (is_numeric($cookie_lat) && is_numeric($cookie_lng) && $this->value['current_location']) {
       $lat = $cookie_lat;
