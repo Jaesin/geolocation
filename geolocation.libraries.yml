@@ -35,10 +35,3 @@ geolocation.widgets.html5:
     js/geolocation-widget-html5.js: { scope: footer }
   dependencies:
     - geolocation/geolocation.core
-# Detect user's location
-geolocation.location-detect:
-  version: 8.x-1.x
-  js:
-    js/geolocation-detect-location.js: {}
-  dependencies:
-    - geolocation/geolocation.core

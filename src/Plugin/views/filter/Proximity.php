@@ -9,12 +9,13 @@ namespace Drupal\geolocation\Plugin\views\filter;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\geolocation\GeolocationCore;
 use Drupal\views\Plugin\views\display\DisplayPluginBase;
 use Drupal\views\Plugin\views\filter\NumericFilter;
 use Drupal\views\Plugin\views\query\Sql;
 use Drupal\views\ViewExecutable;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+
+use Drupal\geolocation\GeolocationCore;
 
 /**
  * Filter handler for search keywords.
@@ -85,12 +86,12 @@ class Proximity extends NumericFilter implements ContainerFactoryPluginInterface
    */
   protected function defineOptions() {
     $options = parent::defineOptions();
-
     // value is already set up properly, we're just adding our new field to it.
-    $options['value']['contains']['lat']['default'] = '';
-    $options['value']['contains']['lng']['default'] = '';
-    $options['value']['contains']['current_location']['default'] = FALSE;
-
+    $options['location']['contains'] = 
+    [
+      'lat'      => ['default' => 37.7752393],
+      'lng'      => ['default' => -122.4593581],
+    ];
     return $options;
   }
 
@@ -101,37 +102,20 @@ class Proximity extends NumericFilter implements ContainerFactoryPluginInterface
     parent::valueForm($form, $form_state);
     $exposed = $form_state->get('exposed');
 
-    if ($exposed) {
-      $form['value']['lat'] = [
-        '#type' => 'textfield',
-        '#title' => $this->t('Latitude'),
-        '#default_value' => $this->value['lat'],
-      ];
-      $form['value']['lng'] = [
-        '#type' => 'textfield',
-        '#title' => $this->t('Longitude'),
-        '#default_value' => $this->value['lng'],
-      ];
-    }
-    else {
-      $form['value']['current_location'] = [
-        '#type' => 'checkbox',
-        '#title' => $this->t("Use user's current location"),
-        '#default_value' => $this->value['current_location'],
-      ];
-    }
-    if ($this->value['current_location']) {
-      $local_js = array(
-        '#attached' => array(
-          'js' => array(
-            drupal_get_path('module', 'geolocation') . '/js/geolocation-detect-location.js' => [],
-          ),
-        ),
-      );
-      $form['value']['detect_location'] = [
-        '#markup' => 'test' . drupal_render($local_js),
-      ];
-    }
+    $form['location'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('Default location'),
+    ];
+    $form['location']['lat'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Latitude'),
+      '#default_value' => $this->options['location']['lat'],
+    ];
+    $form['location']['lng'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Longitude'),
+      '#default_value' => $this->options['location']['lng'],
+    ];
 
   }
 
@@ -145,17 +129,8 @@ class Proximity extends NumericFilter implements ContainerFactoryPluginInterface
     $table_name = $this->ensureMyTable();
     $field_id = str_replace('_proximity', '', $this->realField);
 
-    $cookie_lat = $this->geolocation_core->getCookie('lat');
-    $cookie_lng = $this->geolocation_core->getCookie('lng');
-
-    if (is_numeric($cookie_lat) && is_numeric($cookie_lng) && $this->value['current_location']) {
-      $lat = $cookie_lat;
-      $lgn = $cookie_lng;
-    }
-    else {
-      $lat = $this->value['lat'];
-      $lgn = $this->value['lng'];
-    }
+    $lat = $this->options['location']['lat'];
+    $lgn = $this->options['location']['lng'];
 
     $expression = $this->geolocation_core->getQueryFragment($table_name, $field_id, $lat, $lgn);
 
