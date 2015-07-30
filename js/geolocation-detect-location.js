@@ -52,7 +52,7 @@
               var accuracy = position.coords.accuracy / 1000;
               createCookie('lat', lat, 1);
               createCookie('lng', lng, 1);
-              $.get(settings.path.baseUrl + "geolocation/detect-user-location/" + lat + "/" + lng);
+              $.get(settings.path.baseUrl + "geolocation/detect-user-location/" + lat + "/" + lng + '?_wrapper_format=drupal_ajax');
             },
 
             function(error) {},
