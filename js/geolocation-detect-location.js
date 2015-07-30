@@ -32,7 +32,7 @@
     createCookie(name, "", -1);
   }
 
-  Drupal.behaviors.geolocationHTML5 = {
+  Drupal.behaviors.geolocationDetectLocation = {
     attach: function(context, settings) {
 
       var latCookie = readCookie('lat');

@@ -100,6 +100,7 @@ class Proximity extends NumericFilter implements ContainerFactoryPluginInterface
   protected function valueForm(&$form, FormStateInterface $form_state) {
     parent::valueForm($form, $form_state);
     $exposed = $form_state->get('exposed');
+
     if ($exposed) {
       $form['value']['lat'] = [
         '#type' => 'textfield',

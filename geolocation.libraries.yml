@@ -35,7 +35,7 @@ geolocation.widgets.html5:
     js/geolocation-widget-html5.js: { scope: footer }
   dependencies:
     - geolocation/geolocation.core
-# Google maps display formatter.
+# Detect user's location
 geolocation.location-detect:
   version: 8.x-1.x
   js:
