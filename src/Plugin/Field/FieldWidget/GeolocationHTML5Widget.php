@@ -60,14 +60,11 @@ class GeolocationHTML5Widget extends WidgetBase {
       '#attributes' => array('class' => array('geolocation-hidden-lng')),
     );
 
-    // Attach css
-    $element['#attached']['css'][] = drupal_get_path('module', 'geolocation') . '/css/geolocation-html5-widget.css';
-
-    // Attach js
-    $element['#attached']['js'][] = array(
-      'data' => drupal_get_path('module', 'geolocation') . '/js/geolocation-html5-widget.js',
-      'type' => 'file',
-      'scope' => 'footer',
+    // Attach the html5 library.
+    $element['#attached'] = array(
+      'library' => array(
+        'geolocation/geolocation.widgets.html5',
+      ),
     );
 
     // Wrap the whole form in a container.
