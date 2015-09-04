@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Contains \Drupal\geolocation\Plugin\Field\FieldWidget\GeolocationGooglegeocoderWidget.
@@ -28,11 +27,27 @@ class GeolocationGooglegeocoderWidget extends WidgetBase {
    * {@inheritdoc}
    */
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
+    // Get this field name and parent.
+    $field_name = $this->fieldDefinition->getName();
+    $parents = $form['#parents'];
+    // Get the field state.
+    $field_state = static::getWidgetState($parents, $field_name, $form_state);
 
     // Create a unique canvas id for each map of each geolocation field instance.
     $field_id = preg_replace('/[^a-zA-Z0-9\-]/', '-', $this->fieldDefinition->getName());
-    $canvas_id = uniqid("map-canvas-{$field_id}-");
+    $canvas_id = !empty($field_state['canvas_ids'][$delta])
+      ? $field_state['canvas_ids'][$delta]
+      : uniqid("map-canvas-{$field_id}-");
 
+    // Add the canvas id for this field.
+    $field_state['canvas_ids'] = isset($field_state['canvas_ids'])
+      ?  $field_state['canvas_ids'] + [$delta => $canvas_id]
+      : [$delta => $canvas_id];
+
+    // Save the field state for this field.
+    static::setWidgetState($parents, $field_name, $form_state, $field_state);
+
+    // Get the geolocation value for this element.
     $lat = $items[$delta]->lat;
     $lng = $items[$delta]->lng;
 
@@ -41,25 +56,28 @@ class GeolocationGooglegeocoderWidget extends WidgetBase {
     $lng_default_value = isset($lng) ? $lng : NULL;
 
     // Hidden lat,lng input fields.
-    $element['lat'] = array(
+    $element['lat'] = [
       '#type' => 'hidden',
       '#default_value' => $lat_default_value,
-      '#attributes' => array('class' => array('geolocation-hidden-lat', "for-{$canvas_id}")),
-    );
-    $element['lng'] = array(
+      '#attributes' => ['class' => ['geolocation-hidden-lat', "for-{$canvas_id}"]],
+    ];
+    $element['lng'] = [
       '#type' => 'hidden',
       '#default_value' => $lng_default_value,
-      '#attributes' => array('class' => array('geolocation-hidden-lng', "for-{$canvas_id}")),
-    );
+      '#attributes' => ['class' => ['geolocation-hidden-lng', "for-{$canvas_id}"]],
+    ];
 
-    // The map container.
-    $element['map_canvas'] = array(
-      '#markup' => '<div id="' . $canvas_id . '" class="geolocation-map-canvas"></div>',
+    // Add the map container.
+    $element['map_canvas'] = [
+      '#type' => 'html_tag',
+      '#tag' => 'div',
+      '#attributes' => [
+        'id' => $canvas_id,
+        'class' => ['geolocation-map-canvas'],
+      ],
       '#attached' => [
-        'library' => array(
-          'geolocation/geolocation.widgets.googlegeocoder',
-        ),
-        'drupalSettings' => array(
+        'library' => ['geolocation/geolocation.widgets.googlegeocoder'],
+        'drupalSettings' => [
           'geolocation' => [
             'widget_maps' => [
               $canvas_id => [
@@ -70,17 +88,16 @@ class GeolocationGooglegeocoderWidget extends WidgetBase {
               ],
             ],
           ],
-        ),
+        ],
       ],
-    );
+    ];
 
     // Wrap the whole form in a container.
-    $element += array(
+    $element += [
       '#type' => 'container',
       '#title' => $element['#title'],
-    );
+    ];
 
     return $element;
   }
-
 }

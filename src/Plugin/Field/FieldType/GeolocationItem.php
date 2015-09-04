@@ -124,8 +124,8 @@ class GeolocationItem extends FieldItemBase {
    * {@inheritdoc}
    */
   public function preSave() {
-    $this->lat     = trim($this->lat);
-    $this->lng     = trim($this->lng);
+    $this->lat = trim($this->lat);
+    $this->lng = trim($this->lng);
     $this->lat_sin = sin(deg2rad($this->lat));
     $this->lat_cos = cos(deg2rad($this->lat));
     $this->lng_rad = deg2rad($this->lng);
