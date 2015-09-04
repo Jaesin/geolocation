@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Contains \Drupal\geolocation\Plugin\Field\FieldWidget\GeolocationGooglegeocoderWidget.
@@ -57,25 +56,28 @@ class GeolocationGooglegeocoderWidget extends WidgetBase {
     $lng_default_value = isset($lng) ? $lng : NULL;
 
     // Hidden lat,lng input fields.
-    $element['lat'] = array(
+    $element['lat'] = [
       '#type' => 'hidden',
       '#default_value' => $lat_default_value,
-      '#attributes' => array('class' => array('geolocation-hidden-lat', "for-{$canvas_id}")),
-    );
-    $element['lng'] = array(
+      '#attributes' => ['class' => ['geolocation-hidden-lat', "for-{$canvas_id}"]],
+    ];
+    $element['lng'] = [
       '#type' => 'hidden',
       '#default_value' => $lng_default_value,
-      '#attributes' => array('class' => array('geolocation-hidden-lng', "for-{$canvas_id}")),
-    );
+      '#attributes' => ['class' => ['geolocation-hidden-lng', "for-{$canvas_id}"]],
+    ];
 
     // Add the map container.
-    $element['map_canvas'] = array(
-      '#markup' => '<div id="' . $canvas_id . '" class="geolocation-map-canvas"></div>',
+    $element['map_canvas'] = [
+      '#type' => 'html_tag',
+      '#tag' => 'div',
+      '#attributes' => [
+        'id' => $canvas_id,
+        'class' => ['geolocation-map-canvas'],
+      ],
       '#attached' => [
-        'library' => array(
-          'geolocation/geolocation.widgets.googlegeocoder',
-        ),
-        'drupalSettings' => array(
+        'library' => ['geolocation/geolocation.widgets.googlegeocoder'],
+        'drupalSettings' => [
           'geolocation' => [
             'widget_maps' => [
               $canvas_id => [
@@ -86,15 +88,15 @@ class GeolocationGooglegeocoderWidget extends WidgetBase {
               ],
             ],
           ],
-        ),
+        ],
       ],
-    );
+    ];
 
     // Wrap the whole form in a container.
-    $element += array(
+    $element += [
       '#type' => 'container',
       '#title' => $element['#title'],
-    );
+    ];
 
     return $element;
   }
