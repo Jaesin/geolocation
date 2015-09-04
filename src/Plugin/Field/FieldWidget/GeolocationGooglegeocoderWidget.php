@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Contains \Drupal\geolocation\Plugin\Field\FieldWidget\GeolocationGooglegeocoderWidget.
@@ -41,50 +40,54 @@ class GeolocationGooglegeocoderWidget extends WidgetBase {
     $lng_default_value = isset($lng) ? $lng : NULL;
 
     // The map container.
-    $element['map_canvas'] = array(
-      '#markup' => '<div id="' . $canvas_id . '" class="geolocation-map-canvas"></div>',
-    );
+    $element['map_canvas'] = [
+      '#type' => 'html_tag',
+      '#tag' => 'div',
+      '#attributes' => [
+        'id' => $canvas_id,
+        'class' => ['geolocation-map-canvas'],
+      ],
+    ];
 
     // Hidden lat,lng input fields.
-    $element['lat'] = array(
+    $element['lat'] = [
       '#type' => 'hidden',
       '#default_value' => $lat_default_value,
-      '#attributes' => array('class' => array('geolocation-hidden-lat')),
-    );
-    $element['lng'] = array(
+      '#attributes' => ['class' => ['geolocation-hidden-lat']],
+    ];
+    $element['lng'] = [
       '#type' => 'hidden',
       '#default_value' => $lng_default_value,
-      '#attributes' => array('class' => array('geolocation-hidden-lng')),
-    );
+      '#attributes' => ['class' => ['geolocation-hidden-lng']],
+    ];
 
     // Make default values available as javascript settings. Example: To access
     // the default lat value via javascript use: drupalSettings.mapDefaults.lat
-    $data = array(
-      'defaults' => array(
-        "$canvas_id" => array(
+    $data = [
+      'defaults' => [
+        "$canvas_id" => [
           'lat' => $lat_default_value,
           'lng' => $lng_default_value,
-        ),
-      ),
-    );
+        ],
+      ],
+    ];
 
     // Attach widget library and js settings
-    $element['#attached'] = array(
-      'library' => array(
+    $element['#attached'] = [
+      'library' => [
         'geolocation/geolocation.widgets.googlegeocoder',
-      ),
-      'drupalSettings' => array(
+      ],
+      'drupalSettings' => [
         'geolocation' => $data
-      ),
-    );
+      ],
+    ];
 
     // Wrap the whole form in a container.
-    $element += array(
+    $element += [
       '#type' => 'item',
       '#title' => $element['#title'],
-    );
+    ];
 
     return $element;
   }
-
 }

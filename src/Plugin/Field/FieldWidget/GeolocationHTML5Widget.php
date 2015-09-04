@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Contains \Drupal\geolocation\Plugin\Field\FieldWidget\GeolocationHTML5Widget.
@@ -44,36 +43,35 @@ class GeolocationHTML5Widget extends WidgetBase {
     $button_html .= '<div class="clear"></div>';
     $button_html .= '</div>';
 
-    $element['get_location'] = array(
+    $element['get_location'] = [
       '#markup' => $button_html,
-    );
+    ];
 
     // Hidden lat,lng input fields.
-    $element['lat'] = array(
+    $element['lat'] = [
       '#type' => 'hidden',
       '#default_value' => $lat_default_value,
-      '#attributes' => array('class' => array('geolocation-hidden-lat')),
-    );
-    $element['lng'] = array(
+      '#attributes' => ['class' => ['geolocation-hidden-lat']],
+    ];
+    $element['lng'] = [
       '#type' => 'hidden',
       '#default_value' => $lng_default_value,
-      '#attributes' => array('class' => array('geolocation-hidden-lng')),
-    );
+      '#attributes' => ['class' => ['geolocation-hidden-lng']],
+    ];
 
     // Attach the html5 library.
-    $element['#attached'] = array(
-      'library' => array(
+    $element['#attached'] = [
+      'library' => [
         'geolocation/geolocation.widgets.html5',
-      ),
-    );
+      ],
+    ];
 
     // Wrap the whole form in a container.
-    $element += array(
+    $element += [
       '#type' => 'item',
       '#title' => $element['#title'],
-    );
+    ];
 
     return $element;
   }
-
 }
