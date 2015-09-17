@@ -21,7 +21,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @ViewsArgument("geolocation_argument_proximity")
  */
-class Proximity extends Formula implements ContainerFactoryPluginInterface {
+class ProximityArgument extends Formula implements ContainerFactoryPluginInterface {
 
   var $formula = '';
 

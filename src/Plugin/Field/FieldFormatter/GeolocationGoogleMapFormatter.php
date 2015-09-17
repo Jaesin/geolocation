@@ -91,10 +91,10 @@ class GeolocationGoogleMapFormatter extends FormatterBase {
     // Add formatter settings to the drupalSettings array.
     $field_settings = $this->getSettings();
     $elements =  [];
-    foreach ($items as $item) {
+    foreach ($items as $delta => $item) {
       $uniqueue_id = uniqid("map-canvas-");
 
-      $elements[] = [
+      $elements[$delta] = [
         '#type' => 'markup',
         '#markup' => '<div id="' . $uniqueue_id . '" class="geolocation-google-map"></div>',
         '#attached' => [

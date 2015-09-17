@@ -1,8 +1,7 @@
 <?php
-
 /**
  * @file
- * Contains Drupal\geolocation\GeolocationCore.
+ *   Contains Drupal\geolocation\GeolocationCore.
  */
 
 namespace Drupal\geolocation;
@@ -18,6 +17,8 @@ use Drupal\field\FieldStorageConfigInterface;
  */
 class GeolocationCore {
 
+  const EARTH_RADIUS_KM = 6371;
+  const EARTH_RADIUS_MILE = 3959;
   /**
    * Drupal\Core\Extension\ModuleHandler definition.
    *
@@ -84,6 +85,7 @@ class GeolocationCore {
           'table' => $table_name,
           'entity_type' => $field_storage->get('entity_type'),
           'field_name' => $args['@field_name'].'_proximity',
+          'real field' => $args['@field_name'],
           'label' => t('Distance to !field_name', $args),
           'empty field name' => '- No value -',
           'additional fields' => [
@@ -99,6 +101,7 @@ class GeolocationCore {
           'table' => $table_name,
           'entity_type' => $field_storage->get('entity_type'),
           'field_name' => $args['@field_name'].'_proximity',
+          'real field' => $args['@field_name'],
           'label' => t('Distance to !field_name', $args),
           'allow empty' => TRUE,
           'additional fields' => [
@@ -114,7 +117,7 @@ class GeolocationCore {
           'id' => 'geolocation_field_proximity',
           'field_name' => $args['@field_name'].'_proximity',
           'entity_type' => $field_storage->get('entity_type'),
-          'real field' => $args['@field_name'].'_proximity',
+          'real field' => $args['@field_name'],
           'additional fields' => [
             $args['@field_name'].'_lat',
             $args['@field_name'].'_lng',
@@ -140,9 +143,10 @@ class GeolocationCore {
    * @param $field_id
    * @param $filter_lat
    * @param $filter_lng
+   * @param int $earth_radius
    * @return string
    */
-  public function getQueryFragment($table_name, $field_id, $filter_lat, $filter_lng) {
+  public function getQueryFragment($table_name, $field_id, $filter_lat, $filter_lng, $earth_radius = self::EARTH_RADIUS_KM) {
 
     // Define the field names.
     $field_latsin = "{$table_name}.{$field_id}_lat_sin";
@@ -153,9 +157,6 @@ class GeolocationCore {
     $filter_latcos = cos(deg2rad($filter_lat));
     $filter_latsin = sin(deg2rad($filter_lat));
     $filter_lng    = deg2rad($filter_lng);
-
-    // Keep it simple. We don't need high accuracy here.
-    $earth_radius = 6371;
 
     return "(
       ACOS(
