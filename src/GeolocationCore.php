@@ -8,6 +8,7 @@ namespace Drupal\geolocation;
 
 use Drupal\Core\Extension\ModuleHandler;
 use Drupal\Core\Entity\EntityManager;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\field\FieldStorageConfigInterface;
 
 /**
@@ -16,6 +17,7 @@ use Drupal\field\FieldStorageConfigInterface;
  * @package Drupal\geolocation
  */
 class GeolocationCore {
+  use StringTranslationTrait;
 
   const EARTH_RADIUS_KM = 6371;
   const EARTH_RADIUS_MILE = 3959;
@@ -77,7 +79,7 @@ class GeolocationCore {
 
       $data[$table_name][$args['@field_name'] . '_proximity'] = [
         'group' => 'Content',
-        'title' => t('Proximity (@field_name)', $args),
+        'title' => $this->t('Proximity (@field_name)', $args),
         'title short' => $table_data[$args['@field_name']]['title short'] . t(":proximity"),
         'help' => $table_data[$args['@field_name']]['help'],
         'argument' => [
@@ -86,7 +88,7 @@ class GeolocationCore {
           'entity_type' => $field_storage->get('entity_type'),
           'field_name' => $args['@field_name'].'_proximity',
           'real field' => $args['@field_name'],
-          'label' => t('Distance to !field_name', $args),
+          'label' => $this->t('Distance to !field_name', $args),
           'empty field name' => '- No value -',
           'additional fields' => [
             $args['@field_name'].'_lat',
@@ -102,7 +104,7 @@ class GeolocationCore {
           'entity_type' => $field_storage->get('entity_type'),
           'field_name' => $args['@field_name'].'_proximity',
           'real field' => $args['@field_name'],
-          'label' => t('Distance to !field_name', $args),
+          'label' => $this->t('Distance to !field_name', $args),
           'allow empty' => TRUE,
           'additional fields' => [
             $args['@field_name'].'_lat',
@@ -128,6 +130,14 @@ class GeolocationCore {
           'entity_tables' => $table_data[$args['@field_name']]['field']['entity_tables'],
           'element type' => 'div',
           'is revision' => $table_data[$args['@field_name']]['field']['is revision'],
+          'click sortable' => TRUE,
+        ],
+        'sort' => [
+          'table' => $table_name,
+          'id' => 'geolocation_sort_proximity',
+          'field_name' => $args['@field_name'].'_proximity',
+          'entity_type' => $field_storage->get('entity_type'),
+          'real field' => $args['@field_name'],
           'click sortable' => TRUE,
         ],
       ];

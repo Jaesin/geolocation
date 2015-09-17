@@ -2,7 +2,7 @@
 
 /**
  * @file
- *   Definition of Drupal\geolocation\Plugin\views\Proximity.
+ *   Definition of Drupal\geolocation\Plugin\views\field\ProximityField.
  */
 
 namespace Drupal\geolocation\Plugin\views\field;
@@ -50,24 +50,24 @@ class ProximityField extends NumericField {
     // Add the proximity field group.
     $form['proximity_group'] = [
       '#type' => 'fieldset',
-      '#title' => t('Proximity Settings'),
+      '#title' => $this->t('Proximity Settings'),
     ];
     // Add the source selector.
     $form['proximity_source'] = [
       '#type' => 'select',
-      '#title' => t('Select the source type.'),
-      '#description' => t('To calculate proximity we need a starting point to compare the field value to. Select where to get the start location.'),
+      '#title' => $this->t('Select the source type.'),
+      '#description' => $this->t('To calculate proximity we need a starting point to compare the field value to. Select where to get the start location.'),
       '#default_value' => $this->options['proximity_source'],
       '#fieldset' => 'proximity_group',
       '#options' => [
-        'direct_input' => t('Direct Input'),
-        'filter' => t('Filter Settings'),
+        'direct_input' => $this->t('Direct Input'),
+        'filter' => $this->t('Filter Settings'),
       ],
     ];
     // Add the Latitude field for direct input.
     $form['proximity_lat'] = [
       '#type' => 'textfield',
-      '#title' => t('Latitude'),
+      '#title' => $this->t('Latitude'),
       '#empty_value' => '',
       '#default_value' => $this->options['proximity_lat'],
       '#maxlength' => 255,
@@ -81,7 +81,7 @@ class ProximityField extends NumericField {
     // Add the Latitude field for direct input.
     $form['proximity_lng'] = [
       '#type' => 'textfield',
-      '#title' => t('Longitude'),
+      '#title' => $this->t('Longitude'),
       '#empty_value' => '',
       '#default_value' => $this->options['proximity_lng'],
       '#maxlength' => 255,
@@ -120,11 +120,11 @@ class ProximityField extends NumericField {
     }
     // Add the Filter selector.
     $form['proximity_filter'] = empty($valid_filters)
-      ? ['#markup' => t('There are no proximity filters available in this display.')]
+      ? ['#markup' => $this->t('There are no proximity filters available in this display.')]
       : [
         '#type' => 'select',
-        '#title' => t('Select filter.'),
-        '#description' => t('Select the filter to use as the starting point for calculating proximity.'),
+        '#title' => $this->t('Select filter.'),
+        '#description' => $this->t('Select the filter to use as the starting point for calculating proximity.'),
         '#options' => $valid_filters,
       ];
     $form['proximity_filter'] += [
