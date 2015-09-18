@@ -7,88 +7,53 @@
 
 namespace Drupal\geolocation\Plugin\views\argument;
 
-use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\geolocation\GeoCoreInjectionTrait;
 use Drupal\geolocation\GeolocationCore;
 use Drupal\views\Plugin\views\argument\Formula;
-use Drupal\views\Plugin\views\query\Sql;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Argument handler for geolocation proximity.
+ *
+ * Argument format should be in the following format:
+ * "37.7749295,-122.41941550000001<=5miles" (defaults to km).
  *
  * @ingroup views_argument_handlers
  *
  * @ViewsArgument("geolocation_argument_proximity")
  */
-class ProximityArgument extends Formula implements ContainerFactoryPluginInterface {
+class ProximityArgument extends Formula {
 
-  var $formula = '';
+  use GeoCoreInjectionTrait;
 
-  /**
-   * The route match.
-   *
-   * @var \Drupal\Core\Routing\RouteMatchInterface
-   */
-  protected $routeMatch;
+  protected $operator = '<';
 
   /**
-   * Constructs a new Date instance.
-   *
-   * @param array $configuration
-   *   A configuration array containing information about the plugin instance.
-   * @param string $plugin_id
-   *   The plugin_id for the plugin instance.
-   * @param mixed $plugin_definition
-   *   The plugin implementation definition.
-   *
-   * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
-   *   The route match.
+   * @{inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, RouteMatchInterface $route_match) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition);
-
-    $this->routeMatch = $route_match;
+  public function getFormula() {
+    $value = $this->getValue();
+    // Get the earth radius from the units.
+    $earth_radius = strpos(strtolower($value), 'mile') > -1 ? GeolocationCore::EARTH_RADIUS_MILE : GeolocationCore::EARTH_RADIUS_KM;
+    $this->operator = preg_replace('/[^<>=]/', '', $value);
+    // Split the values into numeric values.
+    $values = preg_split("/[a-zA-Z,<>= ]+/", $this->getValue());
+    $this->argument = !empty($values[2]) ? (int) preg_replace('/(^[0-9]+).*$/', '$1', $values[2]) : NULL;
+    $formula = !empty($earth_radius) && !empty($values[0]) && !empty($values[1]) && !empty($values[2])
+      ? $this->geolocation_core->getQueryFragment($this->tableAlias, $this->realField, $values[0], $values[1], $earth_radius ) : FALSE;
+    return !empty($formula) ? str_replace('***table***', $this->tableAlias, $formula) : '';
   }
 
   /**
-   * {@inheritdoc}
+   * @{inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static(
-      $configuration,
-      $plugin_id,
-      $plugin_definition,
-      $container->get('current_route_match')
+  public function query($group_by = FALSE) {
+    $this->ensureMyTable();
+    // Now that our table is secure, get our formula.
+    $placeholder = $this->placeholder();
+    $formula = $this->getFormula() .' ' . $this->operator . ' ' . $placeholder;
+    $placeholders = array(
+      $placeholder => $this->argument,
     );
+    $this->query->addWhere(0, $formula, $placeholders, 'formula');
   }
-//
-//  /**
-//   * Build the query based upon the formula
-//   */
-//  public function query($group_by = FALSE) {
-//    $this->ensureMyTable();
-//    // Now that our table is secure, get our formula.
-//    $placeholder = $this->placeholder();
-//
-//    $placeholders = array(
-//      $placeholder => $this->argument,
-//    );
-//    /** @var Sql $query */
-//    $query = $this->query;
-//    $query->addWhereExpression(0, $this->getFormula(), $placeholders);
-//  }
-//
-//  /**
-//   * @inheritdoc
-//   */
-//  public function getFormula() {
-//    /** @var GeolocationCore $geo_core */
-//    $geo_core = \Drupal::service('geolocation.core');
-////    $this->query->addWhereExpression($geo_core->generateQueryFragment($this->argument));
-//
-////    $this->query->addWhere(0, "$this->tableAlias.$this->realField", $this->argument);
-//    $formula = $geo_core->generateQueryFragment()str_replace('***table***', $this->tableAlias, $this->formula);
-//    return $formula;
-//  }
 }

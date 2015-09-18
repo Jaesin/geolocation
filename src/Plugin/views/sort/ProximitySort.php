@@ -60,7 +60,9 @@ class ProximitySort extends SortPluginBase {
    * {@inheritdoc}
    */
   public function query() {
-    if (($field = $this->view->field[$this->options['proximity_field']]) && !empty($field->field_alias)) {
+    // Get the field for sorting.
+    $field = isset($this->view->field[$this->options['proximity_field']]) ? $this->view->field[$this->options['proximity_field']] : NULL;
+    if (!empty($field->field_alias)) {
       $this->query->addOrderBy(NULL, NULL, $this->options['order'], $field->field_alias);
       $this->tableAlias = $field->tableAlias;
     }

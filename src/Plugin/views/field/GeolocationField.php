@@ -9,7 +9,6 @@ namespace Drupal\geolocation\Plugin\views\field;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Plugin\views\field\Field;
-use Drupal\views\ResultRow;
 
 /**
  * Field handler for geolocaiton field.
@@ -20,7 +19,7 @@ use Drupal\views\ResultRow;
  *
  * @ViewsField("geolocation_field")
  */
-class Geolocation extends Field {
+class GeolocationField extends Field {
 
   /**
    * {@inheritdoc}
@@ -34,5 +33,8 @@ class Geolocation extends Field {
    */
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     parent::buildOptionsForm($form, $form_state);
+
+    // Remote the click sort field selector.
+    unset($form['click_sort_column']);
   }
 }

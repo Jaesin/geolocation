@@ -59,6 +59,7 @@ class GeolocationCore {
           if (isset($field_data['field'])) {
             // Use our own field handler.
             $data[$table_name][$field_name]['field']['id'] = 'geolocation_field';
+            $data[$table_name][$field_name]['field']['click sortable'] = FALSE;
           }
           if (isset($field_data['filter'])) {
             // The default filters aren't useful at all so remove them.
@@ -77,6 +78,7 @@ class GeolocationCore {
 
       $args = ['@field_name' => $field_storage->getName()];
 
+      // Add proximity handlers.
       $data[$table_name][$args['@field_name'] . '_proximity'] = [
         'group' => 'Content',
         'title' => $this->t('Proximity (@field_name)', $args),
@@ -138,7 +140,6 @@ class GeolocationCore {
           'field_name' => $args['@field_name'].'_proximity',
           'entity_type' => $field_storage->get('entity_type'),
           'real field' => $args['@field_name'],
-          'click sortable' => TRUE,
         ],
       ];
     }

@@ -1,8 +1,7 @@
 <?php
-
 /**
  * @file
- *   Definition of Drupal\search\Plugin\views\filter\Search.
+ *   Definition of Drupal\geolocation\Plugin\views\filter\ProximityFilter.
  */
 
 namespace Drupal\geolocation\Plugin\views\filter;
@@ -13,7 +12,6 @@ use Drupal\geolocation\GeoCoreInjectionTrait;
 use Drupal\geolocation\GeolocationCore;
 use Drupal\views\Plugin\views\display\DisplayPluginBase;
 use Drupal\views\Plugin\views\filter\NumericFilter;
-use Drupal\views\Plugin\views\query\Sql;
 use Drupal\views\ViewExecutable;
 
 /**
@@ -25,7 +23,6 @@ use Drupal\views\ViewExecutable;
  */
 class ProximityFilter extends NumericFilter implements ContainerFactoryPluginInterface {
 
-  // Inject GeolocationCore.
   use GeoCoreInjectionTrait;
 
   /**
@@ -34,6 +31,13 @@ class ProximityFilter extends NumericFilter implements ContainerFactoryPluginInt
    * @var string
    */
   protected $field_alias;
+
+  /**
+   * The query expression.
+   *
+   * @var string
+   */
+  protected $query_fragment;
 
   /**
    * {@inheritdoc}
@@ -154,8 +158,6 @@ class ProximityFilter extends NumericFilter implements ContainerFactoryPluginInt
    * {@inheritdoc}
    */
   public function query() {
-    $table_name = $this->ensureMyTable();
-
     // Get the field alias.
     $lat = $this->value['lat'];
     $lgn = $this->value['lng'];
@@ -163,32 +165,34 @@ class ProximityFilter extends NumericFilter implements ContainerFactoryPluginInt
     // Get the earth radius from the units.
     $earth_radius = $this->value['units'] === 'mile' ? GeolocationCore::EARTH_RADIUS_MILE : GeolocationCore::EARTH_RADIUS_KM;
     // Build the query expression.
-    $expression = $this->geolocation_core->getQueryFragment($table_name, $this->realField, $lat, $lgn, $earth_radius);
-
+    $this->query_fragment = $this->geolocation_core->getQueryFragment($this->ensureMyTable(), $this->realField, $lat, $lgn, $earth_radius);
+    // Get operator info.
     $info = $this->operators();
-    $placeholder = $this->placeholder();
-    if (!empty($info[$this->operator]['method'])) {
-      $this->{$info[$this->operator]['method']}($placeholder, $expression);
+    // Create a placeholder.
+    $field = $this->placeholder();
+    // Make sure a callback exists and add a where expression for the chosen operator.
+    if (!empty($info[$this->operator]['method']) && method_exists($this, $info[$this->operator]['method'])) {
+      $this->{$info[$this->operator]['method']}($field);
     }
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function opBetween($placeholder, $expression) {
+  protected function opBetween($field) {
     if ($this->operator == 'between') {
-      $this->query->addWhereExpression($this->options['group'], "{$expression} BETWEEN {$placeholder}_min AND {$placeholder}_max",
+      $this->query->addWhereExpression($this->options['group'], "{$this->query_fragment} BETWEEN {$field}_min AND {$field}_max",
         [
-          $placeholder . '_min' => $this->value['min'],
-          $placeholder . '_max' => $this->value['max']
+          $field . '_min' => $this->value['min'],
+          $field . '_max' => $this->value['max']
         ]
       );
     }
     else {
-      $this->query->addWhereExpression($this->options['group'], "{$expression} <= {$placeholder}_min OR {$field} >= {$placeholder}_max",
+      $this->query->addWhereExpression($this->options['group'], "{$this->query_fragment} <= {$field}_min OR {$field} >= {$field}_max",
         [
-          $placeholder . '_min' => $this->value['min'],
-          $placeholder . '_max' => $this->value['max']
+          $field . '_min' => $this->value['min'],
+          $field . '_max' => $this->value['max']
         ]
       );
     }
@@ -197,10 +201,10 @@ class ProximityFilter extends NumericFilter implements ContainerFactoryPluginInt
   /**
    * {@inheritdoc}
    */
-  protected function opSimple($placeholder, $expression) {
-    $this->query->addWhereExpression($this->options['group'], "{$expression} {$this->operator} {$placeholder}",
+  protected function opSimple($field) {
+    $this->query->addWhereExpression($this->options['group'], "{$this->query_fragment} {$this->operator} {$field}",
       [
-        $placeholder => $this->value['value']
+        $field => $this->value['value']
       ]
     );
   }
@@ -208,7 +212,7 @@ class ProximityFilter extends NumericFilter implements ContainerFactoryPluginInt
   /**
    * {@inheritdoc}
    */
-  protected function opEmpty($placeholder, $expression) {
+  protected function opEmpty($field) {
     if ($this->operator == 'empty') {
       $operator = "IS NULL";
     }
@@ -216,18 +220,17 @@ class ProximityFilter extends NumericFilter implements ContainerFactoryPluginInt
       $operator = "IS NOT NULL";
     }
 
-    $this->query->addWhereExpression($this->options['group'], "{$expression} {$operator}");
+    $this->query->addWhereExpression($this->options['group'], "{$this->query_fragment} {$operator}");
   }
 
   /**
    * @inheritdoc
    */
-  protected function opRegex($placeholder, $expression) {
-    $this->query->addWhereExpression($this->options['group'], "{$expression} 'REGEXP' {$placeholder}",
+  protected function opRegex($field) {
+    $this->query->addWhereExpression($this->options['group'], "{$this->query_fragment} 'REGEXP' {$field}",
       [
-        $placeholder => $this->value['value']
+        $field => $this->value['value']
       ]
     );
   }
-
 }

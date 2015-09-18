@@ -10,11 +10,8 @@ namespace Drupal\geolocation\Plugin\views\field;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\geolocation\GeoCoreInjectionTrait;
 use Drupal\geolocation\GeolocationCore;
-use Drupal\views\Plugin\views\display\DisplayPluginBase;
 use Drupal\views\Plugin\views\field\NumericField;
 use Drupal\views\Plugin\views\query\Sql;
-use Drupal\views\ResultRow;
-use Drupal\views\ViewExecutable;
 
 /**
  * Field handler for geolocaiton field.
@@ -25,7 +22,6 @@ use Drupal\views\ViewExecutable;
  */
 class ProximityField extends NumericField {
 
-  // Inject GeolocationCore.
   use GeoCoreInjectionTrait;
 
   /**
@@ -146,7 +142,6 @@ class ProximityField extends NumericField {
   public function query() {
     /** @var Sql $query */
     $query = $this->query;
-    $table_name = $this->ensureMyTable();
     if ($this->options['proximity_source'] === 'filter' && $this->view->filter[$this->options['proximity_filter']]) {
       $filter = $this->view->filter[$this->options['proximity_filter']];
       $lat = $filter->value['lat'];
@@ -161,7 +156,7 @@ class ProximityField extends NumericField {
     $earth_radius = $units === 'mile' ? GeolocationCore::EARTH_RADIUS_MILE : GeolocationCore::EARTH_RADIUS_KM;
 
     // Build the query expression.
-    $expression = $this->geolocation_core->getQueryFragment($table_name, $this->realField, $lat, $lgn, $earth_radius);
+    $expression = $this->geolocation_core->getQueryFragment($this->ensureMyTable(), $this->realField, $lat, $lgn, $earth_radius);
 
     // Get a placeholder for this query and save the field_alias for it.
     $placeholder = $this->placeholder();
