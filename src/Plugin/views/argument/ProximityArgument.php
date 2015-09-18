@@ -25,22 +25,36 @@ class ProximityArgument extends Formula {
 
   use GeoCoreInjectionTrait;
 
+  /**
+   * @var string
+   */
   protected $operator = '<';
+
+  /**
+   * @var string
+   */
+  protected $proximity;
 
   /**
    * @{inheritdoc}
    */
   public function getFormula() {
-    $value = $this->getValue();
-    // Get the earth radius from the units.
-    $earth_radius = strpos(strtolower($value), 'mile') > -1 ? GeolocationCore::EARTH_RADIUS_MILE : GeolocationCore::EARTH_RADIUS_KM;
-    $this->operator = preg_replace('/[^<>=]/', '', $value);
-    // Split the values into numeric values.
-    $values = preg_split("/[a-zA-Z,<>= ]+/", $this->getValue());
-    $this->argument = !empty($values[2]) ? (int) preg_replace('/(^[0-9]+).*$/', '$1', $values[2]) : NULL;
-    $formula = !empty($earth_radius) && !empty($values[0]) && !empty($values[1]) && !empty($values[2])
-      ? $this->geolocation_core->getQueryFragment($this->tableAlias, $this->realField, $values[0], $values[1], $earth_radius ) : FALSE;
-    return !empty($formula) ? str_replace('***table***', $this->tableAlias, $formula) : '';
+    // Parse argument for reference location.
+    $values  = $this->getParsedReferenceLocation();
+    // Make sure we have enough information to start with.
+    if ($values && $values['lat'] && $values['lng'] && $values['distance']) {
+      // Get the earth radius in from the units.
+      $earth_radius = $values['units'] === 'mile' ? GeolocationCore::EARTH_RADIUS_MILE : GeolocationCore::EARTH_RADIUS_KM;
+      // Build a formula for the where clause.
+      $formula = $this->geolocation_core->getQueryFragment($this->tableAlias, $this->realField, $values['lat'], $values['lng'], $earth_radius );
+      // Set the operator and value for the query.
+      $this->proximity = $values['distance'];
+      $this->operator = $values['operator'];
+
+      return !empty($formula) ? str_replace('***table***', $this->tableAlias, $formula) : FALSE;
+    } else {
+      return FALSE;
+    }
   }
 
   /**
@@ -52,8 +66,38 @@ class ProximityArgument extends Formula {
     $placeholder = $this->placeholder();
     $formula = $this->getFormula() .' ' . $this->operator . ' ' . $placeholder;
     $placeholders = array(
-      $placeholder => $this->argument,
+      $placeholder => $this->proximity,
     );
     $this->query->addWhere(0, $formula, $placeholders, 'formula');
+  }
+
+  /**
+   * Processes the passed argument into an array of relevant geolocation
+   * information.
+   *
+   * @return array|bool $values
+   */
+  public function getParsedReferenceLocation() {
+    // Cache the vales so this only gets processed once.
+    static $values;
+
+    if (!isset($values)) {
+      // Process argument values into an array.
+      preg_match('/^([0-9\-.]+),+([0-9\-.]+)([<>=]+)([0-9.]+)(.*$)/', $this->getValue(), $values);
+      // Validate and return the passed argument.
+      $values =  is_array($values) ? [
+        'lat' => (isset($values[1]) && ($lat = abs((int) $values[1])) && $lat >= 0 && $lat) <= 90 ? floatval($values[1]) : FALSE,
+        'lng' => (isset($values[2]) && ($lng = abs((int) $values[2])) && $lng >= 0 && $lng) <= 180 ? floatval($values[2]) : FALSE,
+        'operator' => (isset($values[3]) && in_array($values[3], [
+            '<>',
+            '=',
+            '>=',
+            '<='
+          ])) ? $values[3] : '<=',
+        'distance' => (isset($values[4])) ? floatval($values[4]) : FALSE,
+        'units' => (isset($values[5]) && strpos(strtolower($values[5]), 'mile') !== FALSE) ? 'mile' : 'km',
+      ] : FALSE;
+    }
+    return $values;
   }
 }

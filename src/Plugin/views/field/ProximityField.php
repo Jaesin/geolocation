@@ -10,6 +10,7 @@ namespace Drupal\geolocation\Plugin\views\field;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\geolocation\GeoCoreInjectionTrait;
 use Drupal\geolocation\GeolocationCore;
+use Drupal\geolocation\Plugin\views\argument\ProximityArgument;
 use Drupal\views\Plugin\views\field\NumericField;
 use Drupal\views\Plugin\views\query\Sql;
 
@@ -35,6 +36,7 @@ class ProximityField extends NumericField {
       'proximity_lng' => ['default' => ''],
       'units' => ['default' => 'km'],
       'proximity_filter' => ['default' => ''],
+      'proximity_argument' => ['default' => ''],
     ] + parent::defineOptions();
   }
 
@@ -58,6 +60,7 @@ class ProximityField extends NumericField {
       '#options' => [
         'direct_input' => $this->t('Direct Input'),
         'filter' => $this->t('Filter Settings'),
+        'argument' => $this->t('Contextual Filter'),
       ],
     ];
     // Add the Latitude field for direct input.
@@ -132,6 +135,33 @@ class ProximityField extends NumericField {
       ],
     ];
 
+    // Buffer available  filters.
+    $valid_arguments = [];
+
+    // Check for valid filters.
+    foreach ($this->view->getHandlers('argument', $this->view->current_display) as $delta => $filter) {
+      if ($filter['plugin_id'] === 'geolocation_argument_proximity') {
+        $valid_arguments[$delta] = $filter['id'];
+      }
+    }
+    // Add the Filter selector.
+    $form['proximity_argument'] = empty($valid_arguments)
+      ? ['#markup' => $this->t('There are no proximity contextual filters (arguments) available in this display.')]
+      : [
+        '#type' => 'select',
+        '#title' => $this->t('Select contextual filter (argument).'),
+        '#description' => $this->t('Select the contextual filter (argument) to use as the starting point for calculating proximity.'),
+        '#options' => $valid_arguments,
+      ];
+    $form['proximity_argument'] += [
+      '#fieldset' => 'proximity_group',
+      '#states' => [
+        'visible' => [
+          'select[name="options[proximity_source]"]' => ['value' => 'argument'],
+        ],
+      ],
+    ];
+
     // Add the Drupal\views\Plugin\views\field\Numeric settings to the form.
     parent::buildOptionsForm($form, $form_state);
   }
@@ -147,6 +177,13 @@ class ProximityField extends NumericField {
       $lat = $filter->value['lat'];
       $lgn = $filter->value['lng'];
       $units = $filter->value['units'];
+    } elseif ($this->options['proximity_source'] === 'argument' && $this->view->argument[$this->options['proximity_argument']]) {
+      /** @var ProximityArgument $argument */
+      $argument = $this->view->argument[$this->options['proximity_argument']];
+      $values = $argument->getParsedReferenceLocation();
+      $lat = $values['lat'];
+      $lgn = $values['lng'];
+      $units = $values['units'];
     } else {
       $lat = $this->options['proximity_lat'];
       $lgn = $this->options['proximity_lng'];
